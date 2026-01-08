@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gestión Inventario</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="header">
+  <div class="container">
+    <div class="header__row">
+      <div>
+        <h1 class="title">Gestión Inventario</h1>
+      </div>
+
+      <div class="header__actions">
+        <div class="field field--wide">
+        </div>
+      </div>
+    </div>
+
+    <nav class="tabs">
+      <button class="tabbtn active" data-tab="dashboard">Dashboard</button>
+      <button class="tabbtn" data-tab="empresas">Empresas</button>
+      <button class="tabbtn" data-tab="productos">Productos</button>
+      <button class="tabbtn" data-tab="ventas">Ventas</button>
+      <button class="tabbtn" data-tab="reportes">Reportes</button>
+    </nav>
+
+    <div id="globalMsg" class="notice hidden"></div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- DASHBOARD -->
+  <section id="tab-dashboard" class="tab">
+    <div class="grid">
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <div>
+            <h2 class="card__title">Dashboard</h2>
+            <div class="muted">KPIs y gráficos en base a empresas, productos y ventas</div>
+          </div>
+          <div class="row">
+            <button class="btn btn--ghost" id="btnDashRefresh">Actualizar</button>
+          </div>
+        </div>
+
+        <div class="kpis mt-12">
+          <div class="kpi">
+            <div class="kpi__label">Empresas</div>
+            <div class="kpi__value" id="kpi_empresas">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi__label">Productos</div>
+            <div class="kpi__value" id="kpi_productos">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi__label">Stock total</div>
+            <div class="kpi__value" id="kpi_stock_total">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi__label">Ventas totales</div>
+            <div class="kpi__value" id="kpi_ventas_total">$0</div>
+          </div>
+        </div>
+
+        <div id="dashMsg" class="notice hidden"></div>
+      </div>
+
+      <div class="grid grid--2">
+        <div class="card">
+          <!-- ✅ CAMBIO PEDIDO: selector Día/Semana/Mes + título dinámico -->
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <h2 class="card__title" id="ventasChartTitle">Ventas por día (últimos 14 días)</h2>
+
+            <div class="row" style="gap:8px;">
+              <select id="ventasPeriodo" class="select">
+                <option value="dia" selected>Día</option>
+                <option value="semana">Semana</option>
+                <option value="mes">Mes</option>
+              </select>
+            </div>
+          </div>
+          <canvas id="chartVentasDia" height="120"></canvas>
+        </div>
+
+        <div class="card">
+          <h2 class="card__title">Top 5 productos por ingresos</h2>
+          <canvas id="chartTopProductos" height="120"></canvas>
+        </div>
+      </div>
+
+      <div class="grid grid--2">
+        <div class="card">
+          <h2 class="card__title">Alertas de stock bajo</h2>
+          <div class="muted">Productos con stock ≤ <span class="pill" id="lowStockThresholdLabel">3</span></div>
+          <div class="tablewrap mt-12">
+            <table>
+              <thead>
+                <tr><th>Producto</th><th>Stock</th><th>Precio</th></tr>
+              </thead>
+              <tbody id="lowStockTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card__title">Ventas por empresa (Top 5)</h2>
+          <div class="tablewrap mt-12">
+            <table>
+              <thead>
+                <tr><th>Empresa</th><th>Ingresos</th><th># Ventas</th></tr>
+              </thead>
+              <tbody id="ventasPorEmpresaTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EMPRESAS -->
+  <section id="tab-empresas" class="tab">
+    <div class="grid grid--2">
+      <div class="card">
+        <h2 class="card__title">Crear / Actualizar Empresa</h2>
+        <div class="muted">Si llenas <span class="pill">ID</span> se actualiza; si lo dejas vacío se crea.</div>
+
+        <div class="row mt-12">
+          <div class="field field--small">
+            <label>ID</label>
+            <input id="emp_id" type="number" min="1" placeholder="(auto)" />
+          </div>
+          <div class="field">
+            <label>Nombre</label>
+            <input id="emp_nombre" placeholder="Ej: Empresa Spa" />
+          </div>
+          <div class="field">
+            <label>RUT</label>
+            <input id="emp_rut" placeholder="Ej: 76.123.456-7" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Giro</label>
+            <input id="emp_giro" placeholder="Ej: Servicios TI" />
+          </div>
+          <div class="field">
+            <label>Teléfono</label>
+            <input id="emp_telefono" placeholder="+56 9 ..." />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Email</label>
+            <input id="emp_email" placeholder="contacto@empresa.cl" />
+          </div>
+          <div class="field">
+            <label>Dirección</label>
+            <input id="emp_direccion" placeholder="Calle 123, comuna" />
+          </div>
+        </div>
+
+        <div class="row mt-12">
+          <button class="btn" id="btnEmpGuardar">Guardar</button>
+          <button class="btn btn--ghost" id="btnEmpLimpiar">Limpiar</button>
+          <button class="btn btn--ghost" id="btnEmpRefrescar">Refrescar listado</button>
+        </div>
+
+        <div id="empMsg" class="notice hidden"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card__title">Listado de Empresas</h2>
+        <div class="muted">Click en “Editar” para cargar al formulario.</div>
+
+        <div class="tablewrap mt-12">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Nombre</th><th>RUT</th><th>Contacto</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="empTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCTOS -->
+  <section id="tab-productos" class="tab hidden">
+    <div class="grid grid--2">
+      <div class="card">
+        <h2 class="card__title">Crear / Actualizar Producto</h2>
+        <div class="muted">Si llenas <span class="pill">ID</span> se actualiza; si lo dejas vacío se crea.</div>
+
+        <div class="row mt-12">
+          <div class="field field--small">
+            <label>ID</label>
+            <input id="prod_id" type="number" min="1" placeholder="(auto)" />
+          </div>
+          <div class="field">
+            <label>Nombre</label>
+            <input id="prod_nombre" placeholder="Ej: Mouse" />
+          </div>
+          <div class="field">
+            <label>Categoría</label>
+            <input id="prod_categoria" placeholder="Ej: Periféricos" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Precio</label>
+            <input id="prod_precio" type="number" min="0" step="0.01" placeholder="19990" />
+          </div>
+          <div class="field">
+            <label>Costo</label>
+            <input id="prod_costo" type="number" min="0" step="0.01" placeholder="12000" />
+          </div>
+          <div class="field">
+            <label>Stock</label>
+            <input id="prod_stock" type="number" min="0" step="1" placeholder="10" />
+          </div>
+        </div>
+
+        <div class="row mt-12">
+          <button class="btn" id="btnProdGuardar">Guardar</button>
+          <button class="btn btn--ghost" id="btnProdLimpiar">Limpiar</button>
+          <button class="btn btn--ghost" id="btnProdRefrescar">Refrescar listado</button>
+          <div id="importMsg" class="notice hidden"></div>
+
+        </div>
+        <div id="prodMsg" class="notice hidden"></div>
+      </div>
+
+      
+
+      <div class="card">
+        <h2 class="card__title">Listado de Productos</h2>
+        <div class="muted">Click en “Editar” para cargar al formulario.</div>
+
+        <div class="tablewrap mt-12">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="prodTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VENTAS -->
+  <section id="tab-ventas" class="tab hidden">
+
+    <!-- ================= COMPRAS MÚLTIPLES ================= -->
+    <div class="card mt-12">
+        <h2 class="card__title">Compra múltiple (carrito)</h2>
+        
+
+        <!-- Selección -->
+        <div class="row mt-12">
+          <div class="field">
+            <label>Empresa</label>
+            <select id="compra_empresa"></select>
+          </div>
+
+          <div class="field">
+            <label>Producto</label>
+            <select id="compra_producto"></select>
+          </div>
+
+          <div class="field field--small">
+            <label>Cantidad</label>
+            <input id="compra_cantidad" type="number" min="1" value="1" />
+          </div>
+
+          <div class="field field--small" style="align-self:end">
+            <button class="btn" id="btnAgregarCarrito">Agregar</button>
+          </div>
+        </div>
+
+        <!-- Tabla carrito -->
+        <div class="tablewrap mt-12">
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio</th>
+                <th>Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="carritoTable"></tbody>
+          </table>
+        </div>
+
+        <!-- Totales -->
+        <div class="row mt-12" style="justify-content:space-between; align-items:center;">
+          <div>
+            <strong>Total compra:</strong>
+            <span id="carritoTotal">$0</span>
+          </div>
+          <div class="row">
+            <button class="btn btn--ghost" id="btnVaciarCarrito">Vaciar</button>
+            <button class="btn" id="btnConfirmarCompra">Confirmar compra</button>
+          </div>
+        </div>
+
+        <div id="compraMsg" class="notice hidden"></div>
+    </div>
+    <!-- ===================================================== -->
+
+    <div class="grid grid--2">
+      <div class="card">
+        <h2 class="card__title">Crear Venta</h2>
+        <div class="muted">La API calcula <span class="pill">total</span> y descuenta stock.</div>
+
+        <div class="row mt-12">
+          <div class="field">
+            <label>Empresa</label>
+            <select id="venta_empresa"></select>
+          </div>
+          <div class="field">
+            <label>Producto</label>
+            <select id="venta_producto"></select>
+          </div>
+          <div class="field field--small">
+            <label>Cantidad</label>
+            <input id="venta_cantidad" type="number" min="1" step="1" value="1" />
+          </div>
+        </div>
+
+        <div class="row mt-12">
+          <button class="btn" id="btnVentaCrear">Registrar venta</button>
+          <button class="btn btn--ghost" id="btnVentaRefrescar">Refrescar listados</button>
+        </div>
+
+        <div id="ventaMsg" class="notice hidden"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card__title">Listado de Ventas</h2>
+
+        <div class="row">
+          <div class="field">
+            <label>Filtrar por empresa (opcional)</label>
+            <select id="f_empresa">
+              <option value="">(todas)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Filtrar por producto (opcional)</label>
+            <select id="f_producto">
+              <option value="">(todos)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Desde (ISO)</label>
+            <input id="f_desde" placeholder="2026-01-01T00:00:00" />
+          </div>
+          <div class="field">
+            <label>Hasta (ISO)</label>
+            <input id="f_hasta" placeholder="2026-01-31T23:59:59" />
+          </div>
+        </div>
+
+        <div class="row mt-12">
+          <button class="btn btn--ghost" id="btnVentasBuscar">Buscar</button>
+        </div>
+
+        <div class="tablewrap mt-12">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Empresa</th><th>Producto</th><th>Cant.</th><th>Total</th><th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody id="ventasTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REPORTES -->
+  <section id="tab-reportes" class="tab hidden">
+    <div class="grid">
+      <div class="card">
+        <h2 class="card__title">Reporte: Flujo de Caja</h2>
+
+        <div class="row mt-12">
+          <div class="field">
+            <label>Desde</label>
+            <input id="r_desde" type="datetime-local" />
+          </div>
+          <div class="field">
+            <label>Hasta</label>
+            <input id="r_hasta" type="datetime-local" />
+          </div>
+          <div class="field field--small" style="align-self:end">
+            <button class="btn" id="btnReporte">Generar</button>
+          </div>
+        </div>
+
+        <div id="repOut" class="notice hidden"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">© 2026 FRUV.CL © 2023</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
