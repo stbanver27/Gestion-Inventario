@@ -1,4 +1,5 @@
 fastapi
-uvicorn[standard]
-openpyxl
+uvicorn
 python-multipart
+pandas
+openpyxl
